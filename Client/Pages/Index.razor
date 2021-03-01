@@ -1,0 +1,42 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+<h1>Welcome to SignalR With Blazor WASM.</h1>
+<button class="btn btn-success" @onclick="async()=> await Connect()" disabled="@IsConnected">Connect</button>
+<h3>Connecttion Status:@ConnectionStatus </h3>
+<div class="row">
+    <div class="col-4">
+        @foreach (var item in Messages)
+        {
+            <div class="row">
+                <h4>@item</h4>
+            </div>
+        }
+    </div>
+</div>
+@code{
+    List<string> Messages = new List<string>();
+    string Url = "https://localhost:44322/messagehub";
+    string ConnectionStatus = "Disconnected";
+    bool IsConnected = false;
+    HubConnection Connection = null;
+    private async Task Connect()
+    {
+        Connection = new HubConnectionBuilder().WithUrl(Url).Build();
+        await Connection.StartAsync();
+        ConnectionStatus = "Connected :-)";
+        IsConnected = true;
+        Connection.Closed += async (s) =>
+        {
+            IsConnected = false;
+            ConnectionStatus = "Disconnected";
+            await Connection.StartAsync();
+            IsConnected = true;
+        };
+        Connection.On<string>("message", m =>
+        {
+            Messages.Add(m);
+            StateHasChanged();
+        });
+    }
+
+}
